@@ -4,11 +4,11 @@
 #include <cstddef>
 #include <span>
 
-#include "lent_mirror_ring.hpp"
+#include "cds/buffer/lent_mirror_ring.hpp"
 
 namespace {
 
-using Ring = qp::LentMirrorRing<64 * 1024, 64>;
+using Ring = cds::LentMirrorRing<64 * 1024, 64>;
 
 // One message in and out. Sizes that do not divide the ring wrap at a moving point.
 void BM_LentMirrorRing_WriteLendRelease(benchmark::State& state) {
@@ -29,9 +29,9 @@ BENCHMARK(BM_LentMirrorRing_WriteLendRelease)->Arg(64)->Arg(1500)->Arg(16384);
 
 // Eight ranges held at once, handed back newest first.
 void BM_LentMirrorRing_ReverseRelease8(benchmark::State& state) {
-    constexpr std::size_t        kChunk = 512;
-    Ring                         ring;
-    std::array<qp::LentBytes, 8> held{};
+    constexpr std::size_t         kChunk = 512;
+    Ring                          ring;
+    std::array<cds::LentBytes, 8> held{};
     for (auto _ : state) {
         ring.write([&](std::span<std::byte>) { return kChunk * held.size(); });
         for (auto& l : held) l = ring.lend(kChunk);

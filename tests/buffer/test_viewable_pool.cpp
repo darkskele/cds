@@ -3,12 +3,12 @@
 #include <type_traits>
 #include <utility>
 
-#include "viewable_pool.hpp"
+#include "cds/buffer/viewable_pool.hpp"
 
 namespace {
 
 template <bool UseHeap>
-using Pool = qp::ViewablePool<int, 4, UseHeap>;
+using Pool = cds::ViewablePool<int, 4, UseHeap>;
 
 template <typename T>
 class ViewablePoolMoveTest : public ::testing::Test {};

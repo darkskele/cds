@@ -4,15 +4,15 @@
 #include <cstdint>
 #include <optional>
 
-#include "slot_ring.hpp"
+#include "cds/queue/slot_ring.hpp"
 
 namespace {
 
 // Isolation: place alone, freeing the slot untimed so it never runs against an
 // occupied one.
 void BM_SlotRing_PlaceInt(benchmark::State& state) {
-    qp::SlotRing<int, 1024> ring;
-    std::size_t             position = 0;
+    cds::SlotRing<int, 1024> ring;
+    std::size_t              position = 0;
     for (auto _ : state) {
         if (!ring.place(position, 1)) {
             state.PauseTiming();
@@ -31,8 +31,8 @@ BENCHMARK(BM_SlotRing_PlaceInt);
 // Tandem: the whole cycle one position goes through, which is the per file cost
 // the fetch path pays.
 void BM_SlotRing_PlaceTakeInt(benchmark::State& state) {
-    qp::SlotRing<int, 1024> ring;
-    std::size_t             position = 0;
+    cds::SlotRing<int, 1024> ring;
+    std::size_t              position = 0;
     for (auto _ : state) {
         bool placed = ring.place(position, 1);
         benchmark::DoNotOptimize(placed);
@@ -48,8 +48,8 @@ BENCHMARK(BM_SlotRing_PlaceTakeInt);
 // stream has several fetches outstanding.
 template <std::size_t Window>
 void BM_SlotRing_WindowRoundTrip(benchmark::State& state) {
-    qp::SlotRing<int, 1024> ring;
-    std::size_t             position = 0;
+    cds::SlotRing<int, 1024> ring;
+    std::size_t              position = 0;
     for (auto _ : state) {
         for (std::size_t i = 0; i < Window; ++i) ring.place(position + i, static_cast<int>(i));
         for (std::size_t i = 0; i < Window; ++i) {
@@ -67,9 +67,9 @@ BENCHMARK(BM_SlotRing_WindowRoundTrip<32>);
 // Out of order placement, worst case for the sequence check, since every slot
 // is written on a different line from the one read next.
 void BM_SlotRing_ReversedWindow(benchmark::State& state) {
-    constexpr std::size_t   kWindow = 8;
-    qp::SlotRing<int, 1024> ring;
-    std::size_t             position = 0;
+    constexpr std::size_t    kWindow = 8;
+    cds::SlotRing<int, 1024> ring;
+    std::size_t              position = 0;
     for (auto _ : state) {
         for (std::size_t i = kWindow; i-- > 0;) ring.place(position + i, static_cast<int>(i));
         for (std::size_t i = 0; i < kWindow; ++i) {

@@ -1,21 +1,29 @@
 #include <benchmark/benchmark.h>
 
+#include <cstdint>
 #include <utility>
 
-#include "types.hpp"
-#include "viewable_pool.hpp"
+#include "cds/buffer/viewable_pool.hpp"
 
 namespace {
+
+/// A small trivially copyable record.
+struct Record {
+    std::uint16_t exchange{};
+    std::uint16_t market{};
+    std::uint16_t symbol{};
+    double        target_position{};
+};
 
 constexpr std::size_t kCapacity = 1024;
 
 template <bool UseHeap>
-using Pool = qp::ViewablePool<qp::Intent, kCapacity, UseHeap>;
+using Pool = cds::ViewablePool<Record, kCapacity, UseHeap>;
 
 template <bool UseHeap>
 void BM_ViewablePool_Push(benchmark::State& state) {
     Pool<UseHeap> pool;
-    qp::Intent    intent{.exchange = 0, .market = 0, .symbol = 1, .target_position = 2.0};
+    Record        intent{.exchange = 0, .market = 0, .symbol = 1, .target_position = 2.0};
     for (auto _ : state) {
         if (pool.size() == pool.capacity()) {
             state.PauseTiming();
@@ -30,7 +38,7 @@ void BM_ViewablePool_Push(benchmark::State& state) {
 BENCHMARK(BM_ViewablePool_Push<false>);
 BENCHMARK(BM_ViewablePool_Push<true>);
 
-// Mirror of the push case above, via emplace instead of a pre-built Intent.
+// Mirror of the push case above, via emplace instead of a pre-built Record.
 template <bool UseHeap>
 void BM_ViewablePool_Emplace(benchmark::State& state) {
     Pool<UseHeap> pool;
@@ -40,7 +48,7 @@ void BM_ViewablePool_Emplace(benchmark::State& state) {
             pool.reset();
             state.ResumeTiming();
         }
-        pool.emplace(std::uint16_t{0}, std::uint16_t{0}, std::uint16_t{1}, qp::Qty{2.0});
+        pool.emplace(std::uint16_t{0}, std::uint16_t{0}, std::uint16_t{1}, 2.0);
         benchmark::DoNotOptimize(pool);
     }
 }
@@ -53,13 +61,12 @@ template <bool UseHeap>
 void BM_ViewablePool_ViewAccess(benchmark::State& state) {
     Pool<UseHeap> pool;
     for (std::size_t i = 0; i < kCapacity; ++i)
-        pool.push(
-            qp::Intent{.exchange = 0, .market = 0, .symbol = 1, .target_position = double(i)});
+        pool.push(Record{.exchange = 0, .market = 0, .symbol = 1, .target_position = double(i)});
 
     auto        view = pool.view();
     std::size_t i    = 0;
     for (auto _ : state) {
-        qp::Intent intent = view[i];
+        Record intent = view[i];
         benchmark::DoNotOptimize(intent);
         i = (i + 1) % kCapacity;
     }
@@ -86,8 +93,7 @@ template <bool UseHeap>
 void BM_ViewablePool_MoveRoundTrip(benchmark::State& state) {
     Pool<UseHeap> source;
     for (std::size_t i = 0; i < kCapacity; ++i)
-        source.push(
-            qp::Intent{.exchange = 0, .market = 0, .symbol = 1, .target_position = double(i)});
+        source.push(Record{.exchange = 0, .market = 0, .symbol = 1, .target_position = double(i)});
 
     for (auto _ : state) {
         Pool<UseHeap> dest{std::move(source)};

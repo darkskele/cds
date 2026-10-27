@@ -15,7 +15,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace qp {
+namespace cds {
 
 template <std::size_t Size, std::size_t MaxLent>
 class LentMirrorRing;
@@ -186,4 +186,4 @@ class LentMirrorRing {
     std::uint64_t next_   = 0;
 };
 
-}  // namespace qp
+}  // namespace cds

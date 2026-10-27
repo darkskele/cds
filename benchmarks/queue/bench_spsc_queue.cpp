@@ -3,8 +3,8 @@
 #include <optional>
 #include <utility>
 
-#include "spsc_queue.hpp"
-#include "types.hpp"
+#include "cds/queue/spsc_queue.hpp"
+#include "payload.hpp"
 
 namespace {
 
@@ -30,8 +30,8 @@ namespace {
 // clock call. Draining only once every ~1023 pushes amortizes that cost
 // to a small fraction of a nanosecond per push instead.
 void BM_Spsc_PushInt(benchmark::State& state) {
-    qp::SpscQueue<int, 1024> q;
-    int                      i = 0;
+    cds::SpscQueue<int, 1024> q;
+    int                       i = 0;
     for (auto _ : state) {
         bool pushed = q.push(i);
         if (!pushed) {
@@ -61,7 +61,7 @@ BENCHMARK(BM_Spsc_PushInt);
 // Pop alone. Mirror image of BM_Spsc_PushInt: periodically (untimed) refills so
 // pop() never spends timed iterations against an empty queue.
 void BM_Spsc_PopInt(benchmark::State& state) {
-    qp::SpscQueue<int, 1024> q;
+    cds::SpscQueue<int, 1024> q;
     for (int j = 0; j < 1023; ++j) q.push(j);
     for (auto _ : state) {
         auto v = q.pop();
@@ -87,8 +87,8 @@ BENCHMARK(BM_Spsc_PopInt);
 // of just asserting it.
 template <bool UseHeap>
 void BM_Spsc_PushPopInt(benchmark::State& state) {
-    qp::SpscQueue<int, 1024, UseHeap> q;
-    int                               i = 0;
+    cds::SpscQueue<int, 1024, UseHeap> q;
+    int                                i = 0;
     for (auto _ : state) {
         bool pushed = q.push(i);
         benchmark::DoNotOptimize(pushed);
@@ -102,27 +102,26 @@ BENCHMARK(BM_Spsc_PushPopInt<false>);
 BENCHMARK(BM_Spsc_PushPopInt<true>);
 
 template <bool UseHeap>
-void BM_Spsc_PushPopMarketEvent(benchmark::State& state) {
-    qp::SpscQueue<qp::MarketEvent, 1024, UseHeap> q;
+void BM_Spsc_PushPopSharedPayload(benchmark::State& state) {
+    cds::SpscQueue<cds::bench::SharedPayload, 1024, UseHeap> q;
 
-    qp::BookDepthEvent seed;
-    seed.bands = std::make_shared<const qp::BookDepthBands>();
+    const auto seed = cds::bench::make_shared_payload();
 
     for (auto _ : state) {
-        qp::MarketEvent fresh{.base = {.kind = qp::EventKind::BookDepth}, .payload = seed};
-        bool            pushed = q.push(std::move(fresh));
+        cds::bench::SharedPayload fresh  = seed;
+        bool                      pushed = q.push(std::move(fresh));
         benchmark::DoNotOptimize(pushed);
         auto v = q.pop();
         benchmark::DoNotOptimize(v);
     }
 }
 
-BENCHMARK(BM_Spsc_PushPopMarketEvent<false>);
-BENCHMARK(BM_Spsc_PushPopMarketEvent<true>);
+BENCHMARK(BM_Spsc_PushPopSharedPayload<false>);
+BENCHMARK(BM_Spsc_PushPopSharedPayload<true>);
 
 // Real contention.
 void BM_Spsc_PushPopContended(benchmark::State& state) {
-    static qp::SpscQueue<int, 1024> q;
+    static cds::SpscQueue<int, 1024> q;
     if (state.thread_index() == 0) {
         while (q.pop()) {
         }

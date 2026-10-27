@@ -6,7 +6,7 @@
 #include <optional>
 #include <type_traits>
 
-namespace qp {
+namespace cds {
 
 // Lock-free single-producer single-consumer ring buffer. One thread calls
 // push(), a different single thread calls pop().
@@ -93,4 +93,4 @@ class SpscQueue {
     alignas(64) std::atomic<std::size_t> tail_{0};  // consumer-owned
 };
 
-}  // namespace qp
+}  // namespace cds

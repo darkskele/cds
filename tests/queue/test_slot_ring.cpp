@@ -5,10 +5,10 @@
 #include <thread>
 #include <vector>
 
-#include "slot_ring.hpp"
+#include "cds/queue/slot_ring.hpp"
 
 TEST(SlotRing, PlaceAndTakeInPositionOrder) {
-    qp::SlotRing<int, 4> ring;
+    cds::SlotRing<int, 4> ring;
     for (std::size_t i = 0; i < 4; ++i) EXPECT_TRUE(ring.place(i, static_cast<int>(i) + 1));
 
     for (std::size_t i = 0; i < 4; ++i) EXPECT_EQ(*ring.take(i), static_cast<int>(i) + 1);
@@ -18,7 +18,7 @@ TEST(SlotRing, PlaceAndTakeInPositionOrder) {
 // The reason the ring exists. Producers finish backwards and the consumer still
 // sees plan order.
 TEST(SlotRing, OutOfOrderPlacementReadsInOrder) {
-    qp::SlotRing<int, 4> ring;
+    cds::SlotRing<int, 4> ring;
     EXPECT_TRUE(ring.place(3, 40));
     EXPECT_TRUE(ring.place(1, 20));
 
@@ -35,7 +35,7 @@ TEST(SlotRing, OutOfOrderPlacementReadsInOrder) {
 }
 
 TEST(SlotRing, ReadyMatchesWhatTakeWouldGive) {
-    qp::SlotRing<int, 4> ring;
+    cds::SlotRing<int, 4> ring;
     EXPECT_FALSE(ring.ready(0));
     EXPECT_TRUE(ring.place(0, 7));
     EXPECT_TRUE(ring.ready(0));
@@ -46,7 +46,7 @@ TEST(SlotRing, ReadyMatchesWhatTakeWouldGive) {
 // A slot is held from the placement until the take, so the lap after it is
 // refused until then.
 TEST(SlotRing, PlacingALapEarlyIsRefused) {
-    qp::SlotRing<int, 4> ring;
+    cds::SlotRing<int, 4> ring;
     EXPECT_TRUE(ring.place(0, 1));
     EXPECT_FALSE(ring.place(4, 2)) << "slot 0 still holds position 0";
 
@@ -56,8 +56,8 @@ TEST(SlotRing, PlacingALapEarlyIsRefused) {
 }
 
 TEST(SlotRing, ManyLapsKeepOrder) {
-    constexpr int        kLaps = 10'000;
-    qp::SlotRing<int, 4> ring;
+    constexpr int         kLaps = 10'000;
+    cds::SlotRing<int, 4> ring;
     for (int i = 0; i < kLaps; ++i) {
         ASSERT_TRUE(ring.place(static_cast<std::size_t>(i), i));
         ASSERT_EQ(*ring.take(static_cast<std::size_t>(i)), i);
@@ -83,7 +83,7 @@ struct Tracked {
 TEST(SlotRing, DestructorCleansUpWhatWasNeverTaken) {
     g_alive = 0;
     {
-        qp::SlotRing<Tracked, 8> ring;
+        cds::SlotRing<Tracked, 8> ring;
         for (std::size_t i = 0; i < 5; ++i) EXPECT_TRUE(ring.place(i, static_cast<int>(i)));
         EXPECT_EQ(g_alive, 5);
         for (std::size_t i = 0; i < 3; ++i) EXPECT_EQ(ring.take(i)->v, static_cast<int>(i));
@@ -95,9 +95,9 @@ TEST(SlotRing, DestructorCleansUpWhatWasNeverTaken) {
 // Placement is what happens on the fetch workers, one thread per position, and
 // the reader is the engine thread walking positions in order.
 TEST(SlotRing, ConcurrentProducersOneReaderLoseNothing) {
-    constexpr std::size_t        kCapacity = 8;
-    constexpr int                kTotal    = 20'000;
-    qp::SlotRing<int, kCapacity> ring;
+    constexpr std::size_t         kCapacity = 8;
+    constexpr int                 kTotal    = 20'000;
+    cds::SlotRing<int, kCapacity> ring;
 
     std::atomic<std::size_t> handed{0};
     std::atomic<bool>        bad_place{false};

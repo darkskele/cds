@@ -7,10 +7,10 @@
 #include <thread>
 #include <vector>
 
-#include "spmc_queue.hpp"
+#include "cds/queue/spmc_queue.hpp"
 
 TEST(SpmcQueue, PushTryPopFifoWithinCapacity) {
-    qp::SpmcQueue<int, 4, 1> queue;
+    cds::SpmcQueue<int, 4, 1> queue;
     EXPECT_TRUE(queue.push(1));
     EXPECT_TRUE(queue.push(2));
     EXPECT_TRUE(queue.push(3));
@@ -22,7 +22,7 @@ TEST(SpmcQueue, PushTryPopFifoWithinCapacity) {
 }
 
 TEST(SpmcQueue, PushSucceedsWithinCapacityThenFailsWhenFull) {
-    qp::SpmcQueue<int, 4, 1> queue;
+    cds::SpmcQueue<int, 4, 1> queue;
     for (int i = 0; i < 4; ++i) EXPECT_TRUE(queue.push(i));  // virgin slots, always free
 
     // Consumer hasn't read anything: reusing slot 0 isn't free yet.
@@ -35,7 +35,7 @@ TEST(SpmcQueue, PushSucceedsWithinCapacityThenFailsWhenFull) {
 }
 
 TEST(SpmcQueue, PushNeverBlocksWhenFull) {
-    qp::SpmcQueue<int, 4, 1> queue;  // no consumer ever reads
+    cds::SpmcQueue<int, 4, 1> queue;  // no consumer ever reads
     for (int i = 0; i < 4; ++i) queue.push(i);
 
     auto start = std::chrono::steady_clock::now();
@@ -48,7 +48,7 @@ TEST(SpmcQueue, PushNeverBlocksWhenFull) {
 }
 
 TEST(SpmcQueue, EachConsumerSeesTheFullStreamIndependently) {
-    qp::SpmcQueue<int, 8, 3> queue;
+    cds::SpmcQueue<int, 8, 3> queue;
     for (int i = 0; i < 5; ++i) queue.push(i);  // < Capacity, single-threaded-safe
 
     for (int i = 0; i < 5; ++i) EXPECT_EQ(*queue.try_pop(0), i);
@@ -92,7 +92,7 @@ struct Tracked {
 TEST(SpmcQueue, DestructorCleansUpAllLiveSlotsNoWraparound) {
     g_alive = 0;
     {
-        qp::SpmcQueue<Tracked, 8, 1> queue;
+        cds::SpmcQueue<Tracked, 8, 1> queue;
         for (int i = 0; i < 8; ++i) queue.push(i);  // fills exactly to Capacity, no wait
         EXPECT_EQ(g_alive.load(), 8);
     }  // destructor must destroy all 8 still-constructed slots
@@ -103,7 +103,7 @@ TEST(SpmcQueue, WraparoundLeavesExactlyCapacityLiveAfterConsumerCatchesUp) {
     g_alive         = 0;
     constexpr int N = 50;
     {
-        qp::SpmcQueue<Tracked, 8, 1> queue;
+        cds::SpmcQueue<Tracked, 8, 1> queue;
 
         std::thread consumer([&] {
             for (int i = 0; i < N; ++i) {
@@ -126,8 +126,8 @@ TEST(SpmcQueue, WraparoundLeavesExactlyCapacityLiveAfterConsumerCatchesUp) {
 }
 
 TEST(SpmcQueue, SlowConsumerNeverMissesAnEvent) {
-    constexpr int            N = 40;
-    qp::SpmcQueue<int, 4, 1> queue;
+    constexpr int             N = 40;
+    cds::SpmcQueue<int, 4, 1> queue;
 
     std::vector<int> received;
     std::thread      consumer([&] {
@@ -160,9 +160,9 @@ TEST(SpmcQueue, SlowConsumerNeverMissesAnEvent) {
 }
 
 TEST(SpmcQueue, ManyConcurrentConsumersPreserveOrderAndCompleteness) {
-    constexpr int                             N            = 50'000;
-    constexpr std::size_t                     NumConsumers = 6;
-    qp::SpmcQueue<int, 1 << 10, NumConsumers> queue;
+    constexpr int                              N            = 50'000;
+    constexpr std::size_t                      NumConsumers = 6;
+    cds::SpmcQueue<int, 1 << 10, NumConsumers> queue;
 
     // GTest's ASSERT_*/EXPECT_* aren't meant to be evaluated off the main
     // test thread (same convention as SpscQueue's threaded test).
@@ -203,7 +203,7 @@ TEST(SpmcQueue, SharedPtrConsumersShareOwnershipNoDoubleFreeOrLeak) {
     constexpr int         N            = 200;
     constexpr std::size_t NumConsumers = 4;
     {
-        qp::SpmcQueue<std::shared_ptr<Tracked>, 8, NumConsumers> queue;
+        cds::SpmcQueue<std::shared_ptr<Tracked>, 8, NumConsumers> queue;
 
         std::vector<int>         mismatch_at(NumConsumers, -1);
         std::vector<std::thread> consumers;

@@ -10,10 +10,10 @@
 #include <utility>
 #include <vector>
 
-#include "lent_slot_pool.hpp"
+#include "cds/buffer/lent_slot_pool.hpp"
 
-using Pool = qp::LentSlotPool<2048, 8>;
-using qp::LentSlot;
+using Pool = cds::LentSlotPool<2048, 8>;
+using cds::LentSlot;
 
 namespace {
 
@@ -163,7 +163,7 @@ TEST(LentSlotPool, MovedPoolKeepsLentSlotsValid) {
 }
 
 TEST(LentSlotPool, RandomTrafficNeverSharesASlot) {
-    qp::LentSlotPool<2048, 64>                      pool;
+    cds::LentSlotPool<2048, 64>                     pool;
     std::mt19937                                    rng(7);
     std::vector<std::pair<LentSlot, std::uint32_t>> held;
     std::uint32_t                                   tag = 0;

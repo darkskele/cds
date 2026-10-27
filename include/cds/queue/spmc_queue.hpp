@@ -7,7 +7,7 @@
 #include <optional>
 #include <type_traits>
 
-namespace qp {
+namespace cds {
 
 /// Single-producer, multi-consumer queue over a fixed, compile-time set of
 /// consumers.
@@ -113,4 +113,4 @@ class SpmcQueue {
     Cursor cursors_[NumConsumers];
 };
 
-}  // namespace qp
+}  // namespace cds

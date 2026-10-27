@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace qp {
+namespace cds {
 
 /// Fixed-capacity, single-producer buffer: push/emplace append, reset()
 /// rewinds the write position without touching storage. `view()` hands out
@@ -76,4 +76,4 @@ class ViewablePool {
     std::size_t count_ = 0;
 };
 
-}  // namespace qp
+}  // namespace cds

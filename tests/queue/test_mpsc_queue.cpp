@@ -6,10 +6,10 @@
 #include <thread>
 #include <vector>
 
-#include "mpsc_queue.hpp"
+#include "cds/queue/mpsc_queue.hpp"
 
 TEST(MpscQueue, PushTryPopFifoFullEmpty) {
-    qp::MpscQueue<int, 4> q;  // all 4 slots usable, no wasted slot
+    cds::MpscQueue<int, 4> q;  // all 4 slots usable, no wasted slot
     EXPECT_TRUE(q.push(1));
     EXPECT_TRUE(q.push(2));
     EXPECT_TRUE(q.push(3));
@@ -26,12 +26,12 @@ TEST(MpscQueue, PushTryPopFifoFullEmpty) {
 }
 
 TEST(MpscQueue, TryPopEmptyIsNullopt) {
-    qp::MpscQueue<int, 4> q;
+    cds::MpscQueue<int, 4> q;
     EXPECT_FALSE(q.try_pop().has_value());
 }
 
 TEST(MpscQueue, PushNeverBlocksWhenFull) {
-    qp::MpscQueue<int, 4> q;  // nothing ever popped
+    cds::MpscQueue<int, 4> q;  // nothing ever popped
     for (int i = 0; i < 4; ++i) EXPECT_TRUE(q.push(i));
 
     auto start = std::chrono::steady_clock::now();
@@ -60,7 +60,7 @@ struct Tracked {
 TEST(MpscQueue, DestructorCleansUpRemainingElements) {
     g_alive = 0;
     {
-        qp::MpscQueue<Tracked, 8> q;
+        cds::MpscQueue<Tracked, 8> q;
         for (int i = 0; i < 5; ++i) EXPECT_TRUE(q.push(i));
         EXPECT_EQ(g_alive, 5);
         for (int i = 0; i < 3; ++i) EXPECT_EQ(q.try_pop()->v, i);
@@ -70,10 +70,10 @@ TEST(MpscQueue, DestructorCleansUpRemainingElements) {
 }
 
 TEST(MpscQueue, ConcurrentProducersLoseNoElement) {
-    constexpr int               PerProducer  = 50'000;
-    constexpr std::size_t       NumProducers = 4;
-    constexpr int               Total        = PerProducer * static_cast<int>(NumProducers);
-    qp::MpscQueue<int, 1 << 10> q;
+    constexpr int                PerProducer  = 50'000;
+    constexpr std::size_t        NumProducers = 4;
+    constexpr int                Total        = PerProducer * static_cast<int>(NumProducers);
+    cds::MpscQueue<int, 1 << 10> q;
 
     // Producer p emits values p, p+NumProducers, p+2*NumProducers ... so
     // every emitted value across all producers is distinct.

@@ -6,10 +6,10 @@
 #include <thread>
 #include <vector>
 
-#include "work_queue.hpp"
+#include "cds/queue/work_queue.hpp"
 
 TEST(WorkQueue, PushTryPopFifoFullEmpty) {
-    qp::WorkQueue<int, 4> q;  // all 4 slots usable, no wasted slot
+    cds::WorkQueue<int, 4> q;  // all 4 slots usable, no wasted slot
     EXPECT_TRUE(q.push(1));
     EXPECT_TRUE(q.push(2));
     EXPECT_TRUE(q.push(3));
@@ -26,12 +26,12 @@ TEST(WorkQueue, PushTryPopFifoFullEmpty) {
 }
 
 TEST(WorkQueue, TryPopEmptyIsNullopt) {
-    qp::WorkQueue<int, 4> q;
+    cds::WorkQueue<int, 4> q;
     EXPECT_FALSE(q.try_pop().has_value());
 }
 
 TEST(WorkQueue, PushNeverBlocksWhenFull) {
-    qp::WorkQueue<int, 4> q;  // nothing ever popped
+    cds::WorkQueue<int, 4> q;  // nothing ever popped
     for (int i = 0; i < 4; ++i) EXPECT_TRUE(q.push(i));
 
     auto start = std::chrono::steady_clock::now();
@@ -44,8 +44,8 @@ TEST(WorkQueue, PushNeverBlocksWhenFull) {
 // A slot is handed back to the producer one lap on, so a queue driven for
 // many laps is what exercises that hand back.
 TEST(WorkQueue, ManyLapsKeepFifoOrder) {
-    constexpr int         Laps = 10'000;
-    qp::WorkQueue<int, 4> q;
+    constexpr int          Laps = 10'000;
+    cds::WorkQueue<int, 4> q;
 
     for (int i = 0; i < Laps; ++i) {
         ASSERT_TRUE(q.push(i));
@@ -57,7 +57,7 @@ TEST(WorkQueue, ManyLapsKeepFifoOrder) {
 }
 
 TEST(WorkQueue, HeapStorageBehavesTheSame) {
-    qp::WorkQueue<int, 4, /*UseHeap=*/true> q;
+    cds::WorkQueue<int, 4, /*UseHeap=*/true> q;
     for (int i = 0; i < 4; ++i) EXPECT_TRUE(q.push(i));
     EXPECT_FALSE(q.push(4));
     for (int i = 0; i < 4; ++i) EXPECT_EQ(*q.try_pop(), i);
@@ -83,7 +83,7 @@ struct Tracked {
 TEST(WorkQueue, DestructorCleansUpRemainingElements) {
     g_alive = 0;
     {
-        qp::WorkQueue<Tracked, 8> q;
+        cds::WorkQueue<Tracked, 8> q;
         for (int i = 0; i < 5; ++i) EXPECT_TRUE(q.push(i));
         EXPECT_EQ(g_alive.load(), 5);
         for (int i = 0; i < 3; ++i) EXPECT_EQ(q.try_pop()->v, i);
@@ -97,7 +97,7 @@ TEST(WorkQueue, DestructorCleansUpRemainingElements) {
 TEST(WorkQueue, DestructorCleansUpAfterConcurrentConsumers) {
     g_alive = 0;
     {
-        qp::WorkQueue<Tracked, 8> q;
+        cds::WorkQueue<Tracked, 8> q;
         for (int i = 0; i < 8; ++i) EXPECT_TRUE(q.push(i));
 
         // Six fixed pops across three consumers, so two elements are always
@@ -115,9 +115,9 @@ TEST(WorkQueue, DestructorCleansUpAfterConcurrentConsumers) {
 }
 
 TEST(WorkQueue, ConcurrentConsumersTakeEachElementOnce) {
-    constexpr int               N            = 200'000;
-    constexpr std::size_t       NumConsumers = 6;
-    qp::WorkQueue<int, 1 << 10> q;
+    constexpr int                N            = 200'000;
+    constexpr std::size_t        NumConsumers = 6;
+    cds::WorkQueue<int, 1 << 10> q;
 
     std::atomic<int>              taken{0};
     std::vector<std::vector<int>> received(NumConsumers);

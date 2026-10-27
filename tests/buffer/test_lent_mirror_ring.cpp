@@ -8,10 +8,10 @@
 #include <utility>
 #include <vector>
 
-#include "lent_mirror_ring.hpp"
+#include "cds/buffer/lent_mirror_ring.hpp"
 
-using Ring = qp::LentMirrorRing<4096, 4>;
-using qp::LentBytes;
+using Ring = cds::LentMirrorRing<4096, 4>;
+using cds::LentBytes;
 
 namespace {
 
@@ -119,8 +119,8 @@ TEST(LentMirrorRing, OutOfOrderReleaseFreesOnlyBehindTheOldest) {
 }
 
 TEST(LentMirrorRing, StopsLendingAtMaxLent) {
-    qp::LentMirrorRing<4096, 2> ring;
-    std::uint64_t               pos = 0;
+    cds::LentMirrorRing<4096, 2> ring;
+    std::uint64_t                pos = 0;
     fill(ring, 30, pos);
     LentBytes a = ring.lend(10);
     LentBytes b = ring.lend(10);
@@ -177,10 +177,10 @@ TEST(LentMirrorRing, DropUnlentKeepsLentBytesAndFreesTheRest) {
 }
 
 TEST(LentMirrorRing, RandomTrafficKeepsEveryByteInOrder) {
-    qp::LentMirrorRing<4096, 8> ring;
-    std::mt19937                rng(7);
-    std::uint64_t               written = 0, checked = 0;
-    std::vector<LentBytes>      held;
+    cds::LentMirrorRing<4096, 8> ring;
+    std::mt19937                 rng(7);
+    std::uint64_t                written = 0, checked = 0;
+    std::vector<LentBytes>       held;
 
     for (int step = 0; step < 200'000; ++step) {
         const auto w = space(ring);

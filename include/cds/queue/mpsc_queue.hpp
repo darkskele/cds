@@ -7,7 +7,7 @@
 #include <thread>
 #include <type_traits>
 
-namespace qp {
+namespace cds {
 
 /// Lock-free multi-producer, single-consumer bounded queue. Any number of
 /// producer threads may push() concurrently, racing a CAS on enqueue_pos_
@@ -99,4 +99,4 @@ class MpscQueue {
     alignas(64) std::atomic<std::size_t> dequeue_pos_{0};  // consumer-owned
 };
 
-}  // namespace qp
+}  // namespace cds

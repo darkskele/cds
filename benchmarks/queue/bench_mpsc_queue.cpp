@@ -3,13 +3,13 @@
 #include <cstddef>
 #include <optional>
 
-#include "mpsc_queue.hpp"
+#include "cds/queue/mpsc_queue.hpp"
 
 namespace {
 
 void BM_Mpsc_PushInt(benchmark::State& state) {
-    qp::MpscQueue<int, 1024> q;
-    int                      i = 0;
+    cds::MpscQueue<int, 1024> q;
+    int                       i = 0;
     for (auto _ : state) {
         if (!q.push(i)) {
             state.PauseTiming();
@@ -27,7 +27,7 @@ BENCHMARK(BM_Mpsc_PushInt);
 
 // Isolation: try_pop alone. Mirror image of BM_Mpsc_PushInt.
 void BM_Mpsc_TryPopInt(benchmark::State& state) {
-    qp::MpscQueue<int, 1024> q;
+    cds::MpscQueue<int, 1024> q;
     for (int j = 0; j < 1023; ++j) q.push(j);
     for (auto _ : state) {
         auto v = q.try_pop();
@@ -44,8 +44,8 @@ void BM_Mpsc_TryPopInt(benchmark::State& state) {
 BENCHMARK(BM_Mpsc_TryPopInt);
 
 void BM_Mpsc_PushPopInt(benchmark::State& state) {
-    qp::MpscQueue<int, 1024> q;
-    int                      i = 0;
+    cds::MpscQueue<int, 1024> q;
+    int                       i = 0;
     for (auto _ : state) {
         bool pushed = q.push(i);
         benchmark::DoNotOptimize(pushed);
@@ -59,7 +59,7 @@ BENCHMARK(BM_Mpsc_PushPopInt);
 
 template <std::size_t NumProducers>
 void BM_Mpsc_PushPopContended(benchmark::State& state) {
-    static qp::MpscQueue<int, 1024> q;
+    static cds::MpscQueue<int, 1024> q;
     bool is_consumer = state.thread_index() == static_cast<int>(NumProducers);
 
     if (is_consumer) {

@@ -2,10 +2,10 @@
 
 #include <thread>
 
-#include "spsc_queue.hpp"
+#include "cds/queue/spsc_queue.hpp"
 
 TEST(SpscQueue, PushPopFifoFullEmpty) {
-    qp::SpscQueue<int, 4> q;  // capacity 4, one slot wasted -> 3 usable
+    cds::SpscQueue<int, 4> q;  // capacity 4, one slot wasted -> 3 usable
     EXPECT_TRUE(q.push(1));
     EXPECT_TRUE(q.push(2));
     EXPECT_TRUE(q.push(3));
@@ -36,7 +36,7 @@ struct Tracked {
 TEST(SpscQueue, DestructorCleansUpRemainingElements) {
     g_alive = 0;
     {
-        qp::SpscQueue<Tracked, 8> q;
+        cds::SpscQueue<Tracked, 8> q;
         for (int i = 0; i < 5; ++i) EXPECT_TRUE(q.push(i));
         EXPECT_EQ(g_alive, 5);
         for (int i = 0; i < 3; ++i) EXPECT_EQ(q.pop()->v, i);
@@ -46,8 +46,8 @@ TEST(SpscQueue, DestructorCleansUpRemainingElements) {
 }
 
 TEST(SpscQueue, ThreadedProducerConsumerPreservesOrderAndCount) {
-    constexpr int               N = 200'000;
-    qp::SpscQueue<int, 1 << 12> q;
+    constexpr int                N = 200'000;
+    cds::SpscQueue<int, 1 << 12> q;
 
     std::thread producer([&] {
         for (int i = 0; i < N; ++i) {

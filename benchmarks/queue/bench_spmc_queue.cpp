@@ -4,14 +4,14 @@
 #include <memory>
 #include <optional>
 
-#include "spmc_queue.hpp"
-#include "types.hpp"
+#include "cds/queue/spmc_queue.hpp"
+#include "payload.hpp"
 
 namespace {
 
 void BM_Spmc_PushInt(benchmark::State& state) {
-    qp::SpmcQueue<int, 1024, 1> queue;
-    int                         i = 0;
+    cds::SpmcQueue<int, 1024, 1> queue;
+    int                          i = 0;
     for (auto _ : state) {
         if (i % 1000 == 0 && i != 0) {
             state.PauseTiming();
@@ -28,7 +28,7 @@ void BM_Spmc_PushInt(benchmark::State& state) {
 BENCHMARK(BM_Spmc_PushInt);
 
 void BM_Spmc_TryPopInt(benchmark::State& state) {
-    qp::SpmcQueue<int, 1024, 1> queue;
+    cds::SpmcQueue<int, 1024, 1> queue;
     for (int j = 0; j < 1000; ++j) queue.push(j);
     for (auto _ : state) {
         auto v = queue.try_pop(0);
@@ -46,8 +46,8 @@ BENCHMARK(BM_Spmc_TryPopInt);
 
 template <bool UseHeap>
 void BM_Spmc_PushTryPopInt(benchmark::State& state) {
-    qp::SpmcQueue<int, 1024, 1, UseHeap> queue;
-    int                                  i = 0;
+    cds::SpmcQueue<int, 1024, 1, UseHeap> queue;
+    int                                   i = 0;
     for (auto _ : state) {
         queue.push(i);
         auto v = queue.try_pop(0);
@@ -60,26 +60,25 @@ BENCHMARK(BM_Spmc_PushTryPopInt<false>);
 BENCHMARK(BM_Spmc_PushTryPopInt<true>);
 
 template <bool UseHeap>
-void BM_Spmc_PushTryPopMarketEvent(benchmark::State& state) {
-    qp::SpmcQueue<qp::MarketEvent, 1024, 1, UseHeap> queue;
+void BM_Spmc_PushTryPopSharedPayload(benchmark::State& state) {
+    cds::SpmcQueue<cds::bench::SharedPayload, 1024, 1, UseHeap> queue;
 
-    qp::BookDepthEvent seed;
-    seed.bands = std::make_shared<const qp::BookDepthBands>();
+    const auto seed = cds::bench::make_shared_payload();
 
     for (auto _ : state) {
-        queue.push(qp::MarketEvent{.base = {.kind = qp::EventKind::BookDepth}, .payload = seed});
+        queue.push(cds::bench::SharedPayload{seed});
         auto v = queue.try_pop(0);
         benchmark::DoNotOptimize(v);
     }
 }
 
-BENCHMARK(BM_Spmc_PushTryPopMarketEvent<false>);
-BENCHMARK(BM_Spmc_PushTryPopMarketEvent<true>);
+BENCHMARK(BM_Spmc_PushTryPopSharedPayload<false>);
+BENCHMARK(BM_Spmc_PushTryPopSharedPayload<true>);
 
 template <std::size_t NumConsumers>
 void BM_Spmc_PushAllConsumersCaughtUp(benchmark::State& state) {
-    qp::SpmcQueue<int, 1024, NumConsumers> queue;
-    int                                    i = 0;
+    cds::SpmcQueue<int, 1024, NumConsumers> queue;
+    int                                     i = 0;
     for (auto _ : state) {
         queue.push(i);
         for (std::size_t c = 0; c < NumConsumers; ++c) {
@@ -96,7 +95,7 @@ BENCHMARK(BM_Spmc_PushAllConsumersCaughtUp<8>);
 
 template <std::size_t NumConsumers>
 void BM_Spmc_PushTryPopContended(benchmark::State& state) {
-    static qp::SpmcQueue<int, 1024, NumConsumers> queue;
+    static cds::SpmcQueue<int, 1024, NumConsumers> queue;
 
     if (state.thread_index() != 0) {
         auto consumer = static_cast<std::size_t>(state.thread_index() - 1);

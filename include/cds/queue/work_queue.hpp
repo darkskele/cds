@@ -8,7 +8,7 @@
 #include <thread>
 #include <type_traits>
 
-namespace qp {
+namespace cds {
 
 /// Single-producer, multi-consumer bounded queue. Each element goes to exactly
 /// one consumer, whichever claims it first, in push order.
@@ -115,4 +115,4 @@ class WorkQueue {
     alignas(64) std::atomic<std::size_t> dequeue_pos_{0};  // consumer, CAS-raced
 };
 
-}  // namespace qp
+}  // namespace cds

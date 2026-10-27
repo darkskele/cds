@@ -7,7 +7,7 @@
 #include <optional>
 #include <type_traits>
 
-namespace qp {
+namespace cds {
 
 /// Bounded ring addressed by absolute position rather than by a shared cursor.
 /// Producers fill positions in any order, one producer per position, and the
@@ -93,4 +93,4 @@ class SlotRing {
     std::array<Cell, Capacity> cells_;
 };
 
-}  // namespace qp
+}  // namespace cds

@@ -4,11 +4,11 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "lent_slot_pool.hpp"
+#include "cds/buffer/lent_slot_pool.hpp"
 
 namespace {
 
-using Pool = qp::LentSlotPool<2048, 4096>;
+using Pool = cds::LentSlotPool<2048, 4096>;
 
 // One slot out and back. The same slot comes back every time.
 void BM_LentSlotPool_AcquireLendDrop(benchmark::State& state) {
@@ -24,8 +24,8 @@ BENCHMARK(BM_LentSlotPool_AcquireLendDrop);
 
 // A batch of 32 lent at once, dropped newest first.
 void BM_LentSlotPool_Batch32(benchmark::State& state) {
-    Pool                         pool;
-    std::array<qp::LentSlot, 32> held{};
+    Pool                          pool;
+    std::array<cds::LentSlot, 32> held{};
     for (auto _ : state) {
         for (auto& l : held) l = pool.lend(*pool.acquire(), 0, 1472);
         for (auto it = held.rbegin(); it != held.rend(); ++it) *it = {};
@@ -38,10 +38,10 @@ BENCHMARK(BM_LentSlotPool_Batch32);
 
 // Reads every byte of a datagram while range(0) slots stay held, so reads walk that many slots.
 void BM_LentSlotPool_SumHeld(benchmark::State& state) {
-    constexpr std::size_t                   kMsg = 1472;
-    const auto                              held = static_cast<std::size_t>(state.range(0));
-    Pool                                    pool;
-    std::array<qp::LentSlot, Pool::count()> out{};
+    constexpr std::size_t                    kMsg = 1472;
+    const auto                               held = static_cast<std::size_t>(state.range(0));
+    Pool                                     pool;
+    std::array<cds::LentSlot, Pool::count()> out{};
     for (std::size_t i = 0; i < held; ++i) out[i] = pool.lend(*pool.acquire(), 0, kMsg);
 
     std::size_t next = 0;

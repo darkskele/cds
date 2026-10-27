@@ -12,7 +12,7 @@
 #include <system_error>
 #include <utility>
 
-namespace qp {
+namespace cds {
 
 template <std::size_t SlotSize, std::size_t Count>
 class LentSlotPool;
@@ -173,4 +173,4 @@ class LentSlotPool {
     std::unique_ptr<FreeSlotsOf<Count>> free_;
 };
 
-}  // namespace qp
+}  // namespace cds
